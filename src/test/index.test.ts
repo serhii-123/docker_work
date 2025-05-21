@@ -66,8 +66,23 @@ afterAll(async () => {
     await pgContainer?.stop().catch(console.error);
 });
 
-test('simple docker example', async ctx => {
-    const res = await db.execute('select 1');
+test('should create an orders table', async ctx => {
+    await db.execute(`
+            CREATE TABLE orders (
+                id SERIAL PRIMARY KEY,
+                customer_email TEXT NOT NULL,
+                item TEXT NOT NULL,
+                qty INTEGER NOT NULL CHECK (qty > 0),
+                unit_price NUMERIC(10, 2) NOT NULL CHECK (unit_price > 0),
+                status TEXT NOT NULL DEFAULT 'NEW' CHECK (status IN ('NEW', 'PAID', 'CANCELLED')),
+                created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+            );
+    `);
 
-    expect(res.rows).toStrictEqual([{'?column?': 1 }]);
+    const res = await db.execute(`
+        SELECT * FROM pg_tables
+        WHERE schemaname = 'public' AND tablename = 'orders';
+    `);
+
+    expect(res.rows.length).toBeGreaterThan(0);
 });
