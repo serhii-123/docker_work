@@ -37,13 +37,13 @@ class Order {
         price: number
     ): Promise<number> {
         if(!email.includes('@'))
-            throw new Error('ValidationError: Invalid email');
+            throw new Error('ValidationError: invalid email');
 
         if(qty <= 0)
-            throw new Error('ValidationError: Invalid qty');
+            throw new Error('ValidationError: invalid qty');
 
         if(price <= 0)
-            throw new Error('ValidationError: Invalid price');
+            throw new Error('ValidationError: invalid price');
 
         const insertObj: NewOrder = {
             customer_email: email,

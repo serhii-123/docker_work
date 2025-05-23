@@ -93,9 +93,40 @@ describe('default database setting', () => {
 describe('testing a createOrder function', () => {
     it('returned id should be equal to 1', async () => {
         const orderInstance: Order = new Order(db);
-
-        const id: number = await orderInstance.createOrder('someone@i.ua', 'Poster', 32, 3000);
+        const id: number = await orderInstance
+            .createOrder('someone@i.ua', 'Poster', 32, 3000);
 
         expect(id).toBe(1);
+    });
+
+    it('should throw an exception because of invalid email', async () => {
+        const orderInstance: Order = new Order(db);
+
+        await expect(orderInstance.createOrder('someonei.ua', 'Suit', 2, 4000))
+            .rejects.toThrowError('ValidationError: invalid email');
+    });
+
+    it('should throw an exception because of invalid qty', async () => {
+        const orderInstance: Order = new Order(db);
+        await expect(orderInstance.createOrder('s@i.ua', 'Toy car', 0, 200))
+            .rejects.toThrowError('ValidationError: invalid qty');
+    });
+
+    it('should throw an exception because of invalid qty', async () => {
+        const orderInstance: Order = new Order(db);
+        await expect(orderInstance.createOrder('s@i.ua', 'Toy car', -1, 200))
+            .rejects.toThrowError('ValidationError: invalid qty');
+    });
+
+    it('should throw an exception because of invalid price', async () => {
+        const orderInstance: Order = new Order(db);
+        await expect(orderInstance.createOrder('s@i.ua', 'Toy car', 1, 0))
+            .rejects.toThrowError('ValidationError: invalid price');
+    });
+
+    it('should throw an exception because of invalid price', async () => {
+        const orderInstance: Order = new Order(db);
+        await expect(orderInstance.createOrder('s@i.ua', 'Toy car', 1, -1))
+            .rejects.toThrowError('ValidationError: invalid price');
     });
 });
