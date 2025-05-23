@@ -1,14 +1,27 @@
+import { InferInsertModel } from "drizzle-orm";
 import { NodePgDatabase } from "drizzle-orm/node-postgres";
-import { integer, numeric, pgTable, PgTable, serial, text } from "drizzle-orm/pg-core";
+import { integer, numeric, pgTable, serial, text, timestamp } from "drizzle-orm/pg-core";
 
-const orders: PgTable = pgTable('orders', {
-    id: serial('id').primaryKey(),
-    cutomerEmail: text('customer_email').notNull(),
-    item: text('item').notNull(),
-    qty: integer('qty').notNull(),
-    unit_price: numeric('unit_price').notNull(),
-    status: text('status').notNull().default('NEW'),
-})
+const orders = pgTable('orders', {
+    id: serial('id')
+        .primaryKey(),
+    customer_email: text('customer_email')
+        .notNull(),
+    item: text('item')
+        .notNull(),
+    qty: integer('qty')
+        .notNull(),
+    unit_price: numeric('unit_price')
+        .notNull(),
+    status: text('status')
+        .notNull()
+        .default('NEW'),
+    created_at: timestamp('created_at', { withTimezone: true })
+        .notNull()
+        .defaultNow()
+});
+
+type NewOrder = InferInsertModel<typeof orders>;
 
 class Order {
     db!: NodePgDatabase;
@@ -32,7 +45,21 @@ class Order {
         if(price <= 0)
             throw new Error('ValidationError: Invalid price');
 
-        //await this.db.insert()
-        return 1;
+        const insertObj: NewOrder = {
+            customer_email: email,
+            item,
+            qty,
+            unit_price: price.toString()
+        };
+
+        const res = await this.db
+            .insert(orders)
+            .values(insertObj)
+            .returning({ insertedId: orders.id });
+        const id: number = res[0].insertedId;
+        
+        return id;
     };
 }
+
+export default Order;
