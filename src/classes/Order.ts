@@ -67,7 +67,7 @@ class Order {
                 total: sql`COALESCE(SUM(${orders.unit_price} * ${orders.qty}), 0)`
                     .as('total')
             },).from(orders);
-        const total: number = Number(result[0].total); //as unknown as number;
+        const total: number =   Number(result[0].total); //as unknown as number;
         
         return total;
     }

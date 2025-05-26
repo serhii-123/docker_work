@@ -1,3 +1,4 @@
+import path from 'path';
 import { beforeAll, afterAll, expect, test, describe, it } from 'vitest';
 import retry from 'async-retry';
 import Docker from 'dockerode';
@@ -10,6 +11,7 @@ import orders from '../tables/orders';
 let pgContainer: Docker.Container;
 let db: NodePgDatabase;
 let client: Client;
+const sqlFilePath: string = path.resolve('src/sql/init.sql');
 
 async function createDocker(): Promise<string> {
     const docker = new Docker();
@@ -31,6 +33,7 @@ async function createDocker(): Promise<string> {
         name: 'docker-tests',
         HostConfig: {
             AutoRemove: true,
+            Binds: [`${sqlFilePath}:/docker-entrypoint-initdb.d/init.sql`],
             PortBindings: {
                 '5432/tcp': [{ HostPort: `${port}` }]
             }
@@ -68,28 +71,28 @@ afterAll(async () => {
     await pgContainer?.stop().catch(console.error);
 });
 
-describe('default database setting', () => {
-    it('should create an orders table', async ctx => {
-        await db.execute(`
-                CREATE TABLE orders (
-                    id SERIAL PRIMARY KEY,
-                    customer_email TEXT NOT NULL,
-                    item TEXT NOT NULL,
-                    qty INTEGER NOT NULL CHECK (qty > 0),
-                    unit_price NUMERIC(10, 2) NOT NULL CHECK (unit_price > 0),
-                    status TEXT NOT NULL DEFAULT 'NEW' CHECK (status IN ('NEW', 'PAID', 'CANCELLED')),
-                    created_at TIMESTAMPTZ NOT NULL DEFAULT now()
-                );
-        `);
+// describe('default database setting', () => {
+//     it('should create an orders table', async ctx => {
+//         await db.execute(`
+//                 CREATE TABLE orders (
+//                     id SERIAL PRIMARY KEY,
+//                     customer_email TEXT NOT NULL,
+//                     item TEXT NOT NULL,
+//                     qty INTEGER NOT NULL CHECK (qty > 0),
+//                     unit_price NUMERIC(10, 2) NOT NULL CHECK (unit_price > 0),
+//                     status TEXT NOT NULL DEFAULT 'NEW' CHECK (status IN ('NEW', 'PAID', 'CANCELLED')),
+//                     created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+//                 );
+//         `);
 
-        const res = await db.execute(`
-            SELECT * FROM pg_tables
-            WHERE schemaname = 'public' AND tablename = 'orders';
-        `);
+//         const res = await db.execute(`
+//             SELECT * FROM pg_tables
+//             WHERE schemaname = 'public' AND tablename = 'orders';
+//         `);
 
-        expect(res.rows.length).toBeGreaterThan(0);
-    })
-});
+//         expect(res.rows.length).toBeGreaterThan(0);
+//     })
+// });
 
 describe('testing the createOrder function', () => {
     it('returned id should be equal to 1', async () => {
