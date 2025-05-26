@@ -1,4 +1,4 @@
-import { InferInsertModel } from "drizzle-orm";
+import { eq, InferInsertModel } from "drizzle-orm";
 import { NodePgDatabase } from "drizzle-orm/node-postgres";
 import { integer, numeric, pgTable, serial, text, timestamp } from "drizzle-orm/pg-core";
 
@@ -59,7 +59,26 @@ class Order {
         const id: number = res[0].insertedId;
         
         return id;
-    };
+    }
+
+    async payOrder(id: number): Promise<boolean> {
+        const res = await this.db
+            .select({ status: orders.status })
+            .from(orders)
+            .where(eq(orders.id, id));
+
+        if(res.length === 0)
+            throw new Error('OrderNotFount: there\'s no row with the given id');
+
+        if(res[0].status !== 'NEW')
+            throw new Error('InvalidState: the order must have the "NEW" status');
+
+        await this.db
+            .update(orders)
+            .set({ status: 'PAID' });
+
+        return true;
+    }
 }
 
 export default Order;

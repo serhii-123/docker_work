@@ -90,7 +90,7 @@ describe('default database setting', () => {
     })
 });
 
-describe('testing a createOrder function', () => {
+describe('testing the createOrder function', () => {
     it('returned id should be equal to 1', async () => {
         const orderInstance: Order = new Order(db);
         const id: number = await orderInstance
@@ -128,5 +128,30 @@ describe('testing a createOrder function', () => {
         const orderInstance: Order = new Order(db);
         await expect(orderInstance.createOrder('s@i.ua', 'Toy car', 1, -1))
             .rejects.toThrowError('ValidationError: invalid price');
+    });
+});
+
+describe('testing the payOrder function', async () => {
+    it('should change the status of the order', async () => {
+        const orderInstance: Order = new Order(db);
+        const isUpdated: boolean = await orderInstance.payOrder(1);
+
+        expect(isUpdated).toBe(true);
+    });
+
+    it('shoud throw an error because the order status is different from "NEW"', async () => {
+        const orderInstance: Order = new Order(db);
+
+        await expect(orderInstance.payOrder(1))
+            .rejects
+            .toThrowError('InvalidState: the order must have the "NEW" status');
+    });
+
+    it('shoud throw an error because the order with given id does not exist', async () => {
+        const orderInstance: Order = new Order(db);
+
+        await expect(orderInstance.payOrder(2))
+            .rejects
+            .toThrowError('OrderNotFount: there\'s no row with the given id');
     });
 });
