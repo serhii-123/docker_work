@@ -5,6 +5,7 @@ import getPort from 'get-port';
 import { drizzle, NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { Client } from 'pg';
 import Order from '../classes/Order';
+import orders from '../tables/orders';
 
 let pgContainer: Docker.Container;
 let db: NodePgDatabase;
@@ -139,7 +140,7 @@ describe('testing the payOrder function', async () => {
         expect(isUpdated).toBe(true);
     });
 
-    it('shoud throw an error because the order status is different from "NEW"', async () => {
+    it('should throw an error because the order status is different from "NEW"', async () => {
         const orderInstance: Order = new Order(db);
 
         await expect(orderInstance.payOrder(1))
@@ -147,11 +148,39 @@ describe('testing the payOrder function', async () => {
             .toThrowError('InvalidState: the order must have the "NEW" status');
     });
 
-    it('shoud throw an error because the order with given id does not exist', async () => {
+    it('should throw an error because the order with given id does not exist', async () => {
         const orderInstance: Order = new Order(db);
 
         await expect(orderInstance.payOrder(2))
             .rejects
             .toThrowError('OrderNotFount: there\'s no row with the given id');
+    });
+});
+
+describe('testing the calculateRevenue function', async () => {
+    it('should return 0 because there\'s no payed orders', async () => {
+        const ordersInstance: Order = new Order(db);
+        
+        await db.delete(orders);
+        
+        const sum: number = await ordersInstance.calculateRevenue();
+
+        expect(sum).toBe(0);
+    });
+
+    it('should return the sum of the prices', async () => {
+        const orderInstance: Order = new Order(db);
+        const expectedSum: number = 120.95;
+
+        await orderInstance
+            .createOrder('someone@i.ua', 'Poster', 2, 50.40);
+        
+        await orderInstance
+            .createOrder('someone@i.ua', 'Poster', 1, 20.15);
+
+        const sum: number = await orderInstance
+            .calculateRevenue();
+
+        expect(sum).toBe(expectedSum);
     });
 });

@@ -1,25 +1,6 @@
-import { eq, InferInsertModel } from "drizzle-orm";
+import { eq, InferInsertModel, sql } from "drizzle-orm";
 import { NodePgDatabase } from "drizzle-orm/node-postgres";
-import { integer, numeric, pgTable, serial, text, timestamp } from "drizzle-orm/pg-core";
-
-const orders = pgTable('orders', {
-    id: serial('id')
-        .primaryKey(),
-    customer_email: text('customer_email')
-        .notNull(),
-    item: text('item')
-        .notNull(),
-    qty: integer('qty')
-        .notNull(),
-    unit_price: numeric('unit_price')
-        .notNull(),
-    status: text('status')
-        .notNull()
-        .default('NEW'),
-    created_at: timestamp('created_at', { withTimezone: true })
-        .notNull()
-        .defaultNow()
-});
+import orders from "../tables/orders";
 
 type NewOrder = InferInsertModel<typeof orders>;
 
@@ -78,6 +59,17 @@ class Order {
             .set({ status: 'PAID' });
 
         return true;
+    }
+
+    async calculateRevenue(): Promise<number> {
+        const result = await this.db
+            .select({
+                total: sql`COALESCE(SUM(${orders.unit_price} * ${orders.qty}), 0)`
+                    .as('total')
+            },).from(orders);
+        const total: number = Number(result[0].total); //as unknown as number;
+        
+        return total;
     }
 }
 
