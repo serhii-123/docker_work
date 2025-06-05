@@ -56,7 +56,8 @@ class Order {
 
         await this.db
             .update(orders)
-            .set({ status: 'PAID' });
+            .set({ status: 'PAID' })
+            .where(eq(orders.id, id));
 
         return true;
     }
@@ -65,9 +66,11 @@ class Order {
         const result = await this.db
             .select({
                 total: sql`COALESCE(SUM(${orders.unit_price} * ${orders.qty}), 0)`
+                .mapWith(Number)
                     .as('total')
-            },).from(orders);
-        const total: number =   Number(result[0].total); //as unknown as number;
+            },).from(orders)
+            .where(eq(orders.status, 'NEW'));
+        const total: number = result[0].total; //as unknown as number;
         
         return total;
     }

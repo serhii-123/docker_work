@@ -1,5 +1,5 @@
 import path from 'path';
-import { beforeAll, afterAll, expect, test, describe, it } from 'vitest';
+import { beforeAll, afterAll, expect, describe, it } from 'vitest';
 import retry from 'async-retry';
 import Docker from 'dockerode';
 import getPort from 'get-port';
